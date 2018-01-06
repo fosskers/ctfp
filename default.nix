@@ -1,13 +1,15 @@
-{ mkDerivation, base, containers, stdenv, tasty, tasty-hunit
-, tasty-quickcheck, text, transformers
+{ mkDerivation, base, containers, refined, stdenv, tasty
+, tasty-hunit, tasty-quickcheck, text, transformers
 }:
 mkDerivation {
   pname = "ctfp";
   version = "1.0.0";
   src = ./.;
-  libraryHaskellDepends = [ base containers text transformers ];
+  libraryHaskellDepends = [
+    base containers refined text transformers
+  ];
   testHaskellDepends = [
-    base containers tasty tasty-hunit tasty-quickcheck text
+    base containers refined tasty tasty-hunit tasty-quickcheck text
     transformers
   ];
   description = "Solutions to problems in /Category Theory for Programmers/";
