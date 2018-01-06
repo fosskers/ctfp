@@ -1,6 +1,5 @@
 module Category where
 
-import           Control.Concurrent (threadDelay)
 import           Control.Monad.Trans.State.Strict
 import qualified Data.Map.Strict as M
 import           Prelude hiding (id, (.))
