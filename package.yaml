@@ -16,7 +16,20 @@ ghc-options:
 
 dependencies:
   - base >= 4.8 && < 4.11
+  - containers
   - text >= 1.2 && < 1.3
+  - transformers
 
 library:
   source-dirs: lib
+
+tests:
+  ctfp-test:
+    main: Test.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+    dependencies:
+      - ctfp
+      - tasty >= 0.11 && < 0.13
+      - tasty-hunit >= 0.9 && < 0.11
