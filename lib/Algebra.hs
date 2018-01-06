@@ -17,13 +17,15 @@ class Group a where
   --      inverse a |*| a == unit
   (|*|) :: a -> a -> a
 
--- >>> unit :: Ratio Int
--- 1 % 1
--- >>> inverse 5 :: Ratio Int
--- 1 % 5
--- >>> (5 |*| inverse 5) :: Ratio Int
--- 1 % 1
+-- TODO Bad and unlawful!
+-- >>> inverse 0 :: Ratio Int
+-- *** Exception: Ratio has zero denominator
 instance Integral a => Group (Ratio a) where
-  unit = 1
+  unit    = 1
   inverse = recip
-  (|*|) = (*)
+  (|*|)   = (*)
+
+instance Group Bool where
+  unit    = False
+  inverse = not
+  (|*|)   = (&&)

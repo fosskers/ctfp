@@ -6,6 +6,7 @@ import Data.Ratio
 import Prelude hiding (id, (.))
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 main :: IO ()
 main = defaultMain suite
@@ -16,8 +17,10 @@ suite = testGroup "Unit Tests"
     [ testCase "Composition respects identity" (comp 1)
     ]
   , testGroup "Group"
-    [ testCase "Ratio - left inverse"  $ inverse (5 :: Ratio Int) |*| 5 @?= unit
-    , testCase "Ratio - right inverse" $ (5 :: Ratio Int) |*| inverse 5 @?= unit
+    [ testProperty "Ratio - left inverse"  $ \a -> inverse a |*| a == (unit :: Ratio Int)
+    , testProperty "Ratio - right inverse" $ \a -> a |*| inverse a == (unit :: Ratio Int)
+    , testProperty "Bool - left inverse"  $ \a -> inverse a |*| a == (unit :: Bool)
+    , testProperty "Bool - right inverse" $ \a -> a |*| inverse a == (unit :: Bool)
     ]
   ]
 
