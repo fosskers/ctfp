@@ -3,9 +3,12 @@ module Main where
 import Algebra
 import Category
 import Prelude hiding (id, (.))
+import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
+
+---
 
 main :: IO ()
 main = defaultMain suite
@@ -16,16 +19,20 @@ suite = testGroup "Unit Tests"
     [ testCase "Composition respects identity" (comp 1)
     ]
   , testGroup "Group"
-    [ testProperty "Ratio - left inverse"  $ \a -> fmap (\a' -> inverse a' |*| a') (positive $ bump a) == Just unit
-    , testProperty "Ratio - right inverse" $ \a -> fmap (\a' -> a' |*| inverse a') (positive $ bump a) == Just unit
-    , testProperty "Bool - left inverse"   $ \a -> inverse a |*| a == (unit :: Bool)
-    , testProperty "Bool - right inverse"  $ \a -> a |*| inverse a == (unit :: Bool)
-    , testProperty "() - left inverse"     $ \a -> inverse a |*| a == (unit :: ())
-    , testProperty "() - right inverse"    $ \a -> a |*| inverse a == (unit :: ())
+    [ testProperty "Ratio - left inverse"  (leftinv  :: Fraction -> Bool)
+    , testProperty "Ratio - right inverse" (rightinv :: Fraction -> Bool)
+    , testProperty "Bool - left inverse"   (leftinv  :: Bool -> Bool)
+    , testProperty "Bool - right inverse"  (rightinv :: Bool -> Bool)
+    , testProperty "() - left inverse"     (leftinv  :: () -> Bool)
+    , testProperty "() - right inverse"    (rightinv :: () -> Bool)
     ]
   ]
-  where bump 0 = 1
-        bump n = n
+
+leftinv :: (Arbitrary a, Group a, Eq a) => a -> Bool
+leftinv a = inverse a |*| a == unit
+
+rightinv :: (Arbitrary a, Group a, Eq a) => a -> Bool
+rightinv a = a |*| inverse a == unit
 
 comp :: Int -> Assertion
 comp n = f n @?= g n

@@ -5,7 +5,9 @@
 module Algebra where
 
 import Data.Ratio
-import Refined hiding (Positive)
+import Numeric.Natural
+import Refined
+import Test.QuickCheck
 import Unsafe.Coerce
 
 ---
@@ -30,23 +32,30 @@ class Group a where
 -- | Non-zero, positive fractional values.
 --
 -- >>> :set -XTemplateHaskell
--- >>> $$(refineTH (1 % maxBound)) :: Positive
--- Refined (1 % 18446744073709551615)
--- >>> $$(refineTH (maxBound % 1)) :: Positive
--- Refined (18446744073709551615 % 1)
---
--- >>> inverse ($$(refineTH (5 % 17)) :: Positive)
+-- >>> inverse ($$(refineTH (5 % 17)) :: Fraction)
 -- Refined (17 % 5)
-type Positive = Refined (GreaterThan 0) (Ratio Word)
+newtype Fraction = Fraction { unfraction :: Refined (GreaterThan 0) (Ratio Natural) } deriving (Eq, Show)
 
-positive :: Ratio Word -> Maybe Positive
-positive = either (const Nothing) Just . refine
+instance Arbitrary Fraction where
+  arbitrary = (\n d -> Fraction . unsafeCoerce $ f n % f d) <$> (arbitrary :: Gen Natural) <*> (arbitrary :: Gen Natural)
+    where f 0 = 1
+          f n = n
+
+instance Arbitrary Natural where
+  arbitrary = fromIntegral . abs <$> (arbitrary :: Gen Integer)
 
 -- TODO This could be improved. It's hard to use.
-instance Group Positive where
-  unit    = $$(refineTH 1)
-  inverse = unsafeCoerce . recip . unrefine
-  l |*| r = unsafeCoerce $ unrefine l * unrefine r
+instance Group Fraction where
+  unit = Fraction $$(refineTH 1)
+
+  -- By virtue of being passed to this function in a way that compiles,
+  -- the argument already satisfies the Refined predicate.
+  -- By definition `recip` cannot fail on values in that range,
+  -- so we don't need to "rerefine" it, taking a runtime penalty.
+  -- So, it's safe to use `unsafeCoerce` here.
+  inverse = Fraction . unsafeCoerce . recip . unrefine . unfraction
+
+  Fraction l |*| Fraction r = Fraction . unsafeCoerce $ unrefine l * unrefine r
 
 instance Group () where
   unit      = ()
