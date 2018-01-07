@@ -25,14 +25,16 @@ suite = testGroup "Unit Tests"
     , testProperty "Bool - right inverse"  (rightinv :: Bool -> Bool)
     , testProperty "() - left inverse"     (leftinv  :: () -> Bool)
     , testProperty "() - right inverse"    (rightinv :: () -> Bool)
+    , testProperty "Int - left inverse"    (leftinv  :: Integer -> Bool)
+    , testProperty "Int - right inverse"   (rightinv :: Integer -> Bool)
     ]
   ]
 
 leftinv :: (Arbitrary a, Group a, Eq a) => a -> Bool
-leftinv a = inverse a |*| a == unit
+leftinv a = inverse a <> a == identity
 
 rightinv :: (Arbitrary a, Group a, Eq a) => a -> Bool
-rightinv a = a |*| inverse a == unit
+rightinv a = a <> inverse a == identity
 
 comp :: Int -> Assertion
 comp n = f n @?= g n
