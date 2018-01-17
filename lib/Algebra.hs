@@ -42,6 +42,9 @@ class Product f where
   first  :: f a b -> a
   second :: f a b -> b
 
+-- | The tuple is the "best" product for the category of types and functions,
+-- since there is always a way (`(,)`) to map from some other candidate
+-- construction to tuple.
 instance Product (,) where
   first  (a, _) = a
   second (_, b) = b
@@ -54,6 +57,9 @@ class Coproduct f where
   left  :: a -> f a b
   right :: b -> f a b
 
+-- | The disjoint union (`Either`) is the "best" coproduct for the category
+-- of types and functions, since there is always a way (`either`) to map from
+-- `Either` to the other candidate construction.
 instance Coproduct Either where
   left  = Left
   right = Right
