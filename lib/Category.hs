@@ -3,7 +3,7 @@ module Category where
 import           Algebra
 import           Control.Monad.Trans.State.Strict
 import qualified Data.Map.Strict as M
-import           Prelude hiding (id, (.))
+import           Prelude hiding ((.))
 
 ---
 
@@ -55,3 +55,35 @@ safeRecip n = Just $ 1 / n
 -- Just 0.5
 -- >>> f 0
 -- Nothing
+
+------------
+-- CHAPTER 8
+------------
+
+data Pair a b = Pair a b
+
+instance Bifunctor Pair where
+  bimap f g (Pair a b) = Pair (f a) (g b)
+  fstmap f  (Pair a b) = Pair (f a) b
+  sndmap g  (Pair a b) = Pair a (g b)
+
+data PreList a b = Nil | Cons a b
+
+instance Bifunctor PreList where
+  bimap _ _ Nil = Nil
+  bimap f g (Cons a b) = Cons (f a) (g b)
+
+data K2 c a b = K2 c
+
+instance Bifunctor (K2 c) where
+  bimap _ _ (K2 c) = K2 c
+
+data Fst a b = Fst a
+
+instance Bifunctor Fst where
+  bimap f _ (Fst a) = Fst $ f a
+
+data Snd a b = Snd b
+
+instance Bifunctor Snd where
+  bimap _ g (Snd b) = Snd $ g b

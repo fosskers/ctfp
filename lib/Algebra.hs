@@ -1,21 +1,22 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
 
 module Algebra where
 
-import qualified Control.Monad.Trans.State.Lazy as LS
-import qualified Control.Monad.Trans.State.Strict as SS
-import           Data.Functor.Identity (Identity)
-import           Data.Ratio
-import           Numeric.Natural
-import           Prelude hiding (Monoid, id, (.))
-import           Refined
-import           Test.QuickCheck
-import           Unsafe.Coerce
+import Data.Ratio
+import Numeric.Natural
+import Prelude hiding (Monoid, id, (.))
+import Refined
+import Test.QuickCheck
+import Unsafe.Coerce
 
 ---
 
+-- | Objects and morphisms. Since we're in Haskell, it's assumed that the
+-- objects are always Types.
 class Category t where
   -- | An identity morphism.
   id :: t a a
@@ -28,15 +29,22 @@ instance Category (->) where
 
   (.) f g a = f (g a)
 
-class Category t => Kleisli t where
-  (>=>) :: Monad m => t a (m b) -> t b (m c) -> t a (m c)
+-- class Category t => Kleisli t where
+--   (>=>) :: Monad m => t a (m b) -> t b (m c) -> t a (m c)
 
 -- Is using Monad like this cheating? Or is Kleisli so fundamental that there
 -- couldn't possibly be a complicated implementation.
 --
 -- Should Monad be defined in terms of /this/ instead? Still unclear.
-instance Kleisli (->) where
-  (f >=> g) a = f a >>= g
+-- instance Kleisli (->) where
+--   (f >=> g) a = f a >>= g
+
+newtype Kleisli a b = Kleisli { kleisli :: forall m. Monad m => a -> m b }
+
+instance Category Kleisli where
+  id = Kleisli return
+
+  (.) (Kleisli f) (Kleisli g) = Kleisli (\a -> g a >>= f)
 
 class Product f where
   first  :: f a b -> a
@@ -49,10 +57,6 @@ instance Product (,) where
   first  (a, _) = a
   second (_, b) = b
 
--- instance Product (LS.State s Identity a) where
---   first  = LS.execState
---   second = LS.evalState
-
 class Coproduct f where
   left  :: a -> f a b
   right :: b -> f a b
@@ -63,6 +67,57 @@ class Coproduct f where
 instance Coproduct Either where
   left  = Left
   right = Right
+
+-- newtype IdState s a = IdState { idstate :: LS.StateT s Identity a } deriving (Functor, Applicative)
+
+-- | Not possible, since we can't specify any constraints (esp. Monoid) on `b` here.
+-- instance Coproduct IdState where
+--   left s = IdState $ LS.state (\_ -> (mempty, s))
+--   right  = pure
+
+-- | What is this actually in Category Theory?
+-- This /kinda/ follows from Product (using `first` and `second`), but it's
+-- also possible for `Either` using /its/ factorizer (`either`).
+class Swappable f where
+  swap :: f a b -> f b a
+
+instance Swappable (,) where
+  swap (a, b) = (b, a)
+
+instance Swappable Either where
+  swap = either Right Left
+
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+
+class Contravariant f where
+  contramap :: (b -> a) -> f a -> f b
+
+-- type Op r a = a -> r
+
+-- | Impossible!
+-- instance Functor (Op r) where
+--   fmap f (Op g) = Op (\b -> undefined)
+
+-- instance Contravariant ((->) r) where
+--   contramap f g = g . f
+
+class Bifunctor f where
+  bimap  :: (a -> b) -> (c -> d) -> f a c -> f b d
+  bimap f g = sndmap g . fstmap f
+
+  fstmap :: (a -> b) -> f a c -> f b c
+  fstmap f x = bimap f id x
+
+  sndmap :: (c -> d) -> f a c -> f a d
+  sndmap g x = bimap id g x
+
+class Profunctor f where
+  dimap :: (a' -> a) -> (b -> b') -> f a b -> f a' b'
+
+-- | Uhh... what's the point?
+instance Profunctor (->) where
+  dimap f g h = g . h . f
 
 -- | Types with a binary, associative operator.
 class Semigroup a where
